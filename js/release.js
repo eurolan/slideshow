@@ -17,6 +17,8 @@
   // let the STB send us Exit/VK events and file listings
   gSTB.EnableVKButton(true);        // API exposes Exit/Back
   gSTB.SetListFilesExt('.jpg .jpeg .png .gif');
+  gSTB.EnableSpatialNavigation(true);    // :contentReference[oaicite:0]{index=0}
+  gSTB.EnableTvButton(true);
 
   // show/hide utilities
   function showMessage(text) {
@@ -110,9 +112,18 @@
 
   // catch the remote’s Exit/Back and close the app
   document.addEventListener('keydown', function(e){
-    // common STB Exit/back codes: 8 (Back), 27 (Esc), 461 (VK_EXIT)
-    if ([8,27,461].includes(e.keyCode)) {
-      gSTB.CloseWebWindow();      // returns to the portal :contentReference[oaicite:0]{index=0}
+    // keyCode 13 = OK/Enter
+    if (e.keyCode === 13) {
+      const el = document.activeElement;
+      if (el && el.click) {
+        el.click();
+        return;
+      }
+    }
+    // Back/Esc/Exit keys
+    const exitCodes = [8, 27, 461, 413]; // add any others your remote sends
+    if (exitCodes.includes(e.keyCode)) {
+      gSTB.CloseWebWindow();  // :contentReference[oaicite:1]{index=1}
     }
   });
 
