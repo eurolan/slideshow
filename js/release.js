@@ -1,6 +1,7 @@
 (function(){
   let images = [], idx = 0, timer = null;
   const imgEl        = document.getElementById('slide');
+  const msgEl        = document.getElementById('message');
   const intervalInput= document.getElementById('interval');
   const btnShuffle   = document.getElementById('shuffle');
   const btnLoop      = document.getElementById('loop');
@@ -13,8 +14,16 @@
     loop:     true
   };
 
-  // Only list these extensions:
+  // only look for these extensions
   gSTB.SetListFilesExt('.jpg .jpeg .png .gif');
+
+  function showMessage(text) {
+    msgEl.textContent = text;
+    msgEl.style.display = 'block';
+  }
+  function hideMessage() {
+    msgEl.style.display = 'none';
+  }
 
   function shuffleArray(a){
     for(let i = a.length - 1; i > 0; i--){
@@ -27,26 +36,47 @@
     images = [];
     idx = 0;
 
-    // 1) Get all mount points under /media
-    var rootList = gSTB.ListDir('/media', false);
-    eval(rootList); // yields dirs[], files[]
+    // 1) list mount-points under /media
+    let rootJs;
+    try {
+      rootJs = gSTB.ListDir('/media', false);
+      eval(rootJs);  // defines dirs[], files[]
+    } catch(e){
+      showMessage('Error accessing file system');
+      return;
+    }
 
-    dirs.forEach(function(dir){
-      if (!dir || dir.slice(-1) !== '/') return;  // skip non‐dirs
-      var listJs = gSTB.ListDir('/media/' + dir, false);
-      eval(listJs);
-      files.forEach(function(f){
+    // pick only real directories (end in '/')
+    const usbDirs = dirs.filter(d => d && d.endsWith('/'));
+    if (usbDirs.length === 0) {
+      showMessage('No USB drive detected. Please insert a USB stick.');
+      return;
+    }
+
+    // we have at least one USB
+    hideMessage();
+
+    // 2) walk each
+    usbDirs.forEach(dir => {
+      let listJs = gSTB.ListDir('/media/' + dir, false);
+      eval(listJs);  // redefines dirs[], files[] for this partition
+      files.forEach(f => {
         if (f.Name) {
           images.push('/media/' + dir + f.Name);
         }
       });
     });
 
+    // 3) shuffle if desired
     if (settings.shuffle) shuffleArray(images);
+
+    if (images.length === 0) {
+      showMessage('No images found on USB drive.');
+    }
   }
 
   function showNext(){
-    if (!images.length) return;
+    if (images.length === 0) return;
     imgEl.src = images[idx++];
     if (idx >= images.length) {
       if (settings.loop) {
@@ -60,6 +90,12 @@
 
   function startSlideshow(){
     stopSlideshow();
+    // reload images each time you hit Start (in case user plugged in after load)
+    loadImages();
+
+    // only run if we have something to show
+    if (images.length === 0) return;
+
     settings.interval = Number(intervalInput.value) * 1000;
     timer = setInterval(showNext, settings.interval);
     showNext();
@@ -69,6 +105,7 @@
     if (timer) clearInterval(timer);
   }
 
+  // wire up controls
   btnShuffle.addEventListener('click', ()=>{
     settings.shuffle = !settings.shuffle;
     btnShuffle.textContent = `Shuffle ${settings.shuffle? 'On':'Off'}`;
@@ -80,6 +117,6 @@
   btnStart.addEventListener('click', startSlideshow);
   btnStop.addEventListener('click', stopSlideshow);
 
-  // initial population of images
+  // initial load: will show message if no USB
   loadImages();
 })();

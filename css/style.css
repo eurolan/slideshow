@@ -16,3 +16,9 @@ body {
 #controls button {
   margin: 0 5px; padding: 5px 10px;
 }
+#message {
+  position: absolute;
+  top: 40%;
+  width: 100%;
+  font-size: 18px;
+}
