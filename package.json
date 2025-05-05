@@ -1,7 +1,7 @@
 {
 	"name": "slideshow",
     "date": "2025.05.29",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "View USB-stick photos as a fullscreen slideshow",
 	"author": {
 		"name": "Eurolan",
